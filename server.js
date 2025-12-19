@@ -24,7 +24,7 @@ app.use('/uploads', express.static('uploads'));
 
 // --- MONGODB CONNECTION ---
 // Replace with your actual connection string if using MongoDB Atlas cloud
-const MONGODB_URI = 'mongodb://127.0.0.1:27017/irbc_db'; 
+const MONGODB_URI = 'mongodb+srv://<db_username>:<db_password>@cluster0-irbc-app.jjhposi.mongodb.net/?appName=Cluster0-irbc-app'; 
 
 mongoose.connect(MONGODB_URI)
     .then(() => console.log('✅ MongoDB Connected Successfully'))
