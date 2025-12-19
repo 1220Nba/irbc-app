@@ -23,6 +23,8 @@ cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET
+    //db_username: process.env.db_username
+    //db_password: process.env.db_password
 });
 
 // Multer Storage Engine (Connects Uploads to Cloudinary)
@@ -54,7 +56,7 @@ const requireAuth = (req, res, next) => {
 // --- 3. DATABASE CONNECTION ---
 
 // Uses the connection string from .env (or falls back to local for testing)
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://user_irbc-app_1:ZoDlA0xBZOzcqX6H@cluster0-irbc-app.jjhposi.mongodb.net/?appName=Cluster0-irbc-app';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://<db_username>:<db_password>@cluster0-irbc-app.jjhposi.mongodb.net/?appName=Cluster0-irbc-app';
 
 mongoose.connect(MONGODB_URI)
     .then(() => console.log('✅ MongoDB Connected Successfully'))
