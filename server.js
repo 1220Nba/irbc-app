@@ -54,7 +54,7 @@ const requireAuth = (req, res, next) => {
 // --- 3. DATABASE CONNECTION ---
 
 // Uses the connection string from .env (or falls back to local for testing)
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/irbc_db';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://user_irbc-app_1:ZoDlA0xBZOzcqX6H@cluster0-irbc-app.jjhposi.mongodb.net/?appName=Cluster0-irbc-app';
 
 mongoose.connect(MONGODB_URI)
     .then(() => console.log('✅ MongoDB Connected Successfully'))
