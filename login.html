@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f4f4f9; }
+        .login-box { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; }
+        input { padding: 10px; margin-bottom: 10px; width: 200px; display: block; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="login-box">
+        <h2>Admin Login</h2>
+        <input type="password" id="password" placeholder="Enter Admin Password">
+        <button onclick="login()">Login</button>
+        <p id="error" style="color: red; display: none;">Invalid Password</p>
+    </div>
+
+    <script>
+        function login() {
+            const password = document.getElementById('password').value;
+            // Ideally, we verify with server, but for simplicity:
+            // We save the password to LocalStorage to use in admin.html
+            localStorage.setItem('adminToken', password);
+            window.location.href = 'admin.html';
+        }
+    </script>
+</body>
+</html>
