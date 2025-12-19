@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IRBC Admin Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f9; padding: 20px; }
+        h1 { text-align: center; color: #333; }
+        
+        .container { max-width: 1000px; margin: 0 auto; }
+        
+        /* Card Style for Incidents */
+        .incident-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            padding: 20px;
+            display: flex;
+            gap: 20px;
+            align-items: start;
+        }
+
+        .incident-img {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+
+        .incident-info { flex: 1; }
+        .incident-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .incident-title { font-size: 1.2rem; font-weight: bold; margin: 0; }
+        .incident-date { color: #888; font-size: 0.9rem; }
+        
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .status-pending { background-color: #ffecb3; color: #8a6d0b; }
+        .status-resolved { background-color: #d4edda; color: #155724; }
+        .status-rejected { background-color: #f8d7da; color: #721c24; }
+
+        .action-buttons { margin-top: 15px; }
+        button {
+            padding: 8px 12px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            margin-right: 5px;
+            font-weight: bold;
+        }
+        .btn-resolve { background-color: #28a745; color: white; }
+        .btn-reject { background-color: #dc3545; color: white; }
+        .btn-resolve:hover { background-color: #218838; }
+        .btn-reject:hover { background-color: #c82333; }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Admin Dashboard - Incident Reports</h1>
+        <div id="incidentList">
+            <p style="text-align:center;">Loading incidents...</p>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api/incidents';
+        const BASE_URL = 'http://localhost:5000'; // To load images
+
+        // 1. Fetch and Display Incidents on Load
+        async function loadIncidents() {
+            try {
+                const response = await fetch(API_URL);
+                const incidents = await response.json();
+                
+                const container = document.getElementById('incidentList');
+                container.innerHTML = ''; // Clear loading text
+
+                if (incidents.length === 0) {
+                    container.innerHTML = '<p style="text-align:center;">No incidents reported yet.</p>';
+                    return;
+                }
+
+                incidents.forEach(incident => {
+                    const card = document.createElement('div');
+                    card.className = 'incident-card';
+                    
+                    // Determine Badge Color
+                    let badgeClass = 'status-pending';
+                    if(incident.status === 'Resolved') badgeClass = 'status-resolved';
+                    if(incident.status === 'Rejected') badgeClass = 'status-rejected';
+
+                    card.innerHTML = `
+                        <a href="${BASE_URL}${incident.imageUrl}" target="_blank">
+                            <img src="${BASE_URL}${incident.imageUrl}" alt="Incident Image" class="incident-img">
+                        </a>
+                        <div class="incident-info">
+                            <div class="incident-header">
+                                <h2 class="incident-title">${incident.title}</h2>
+                                <span class="status-badge ${badgeClass}">${incident.status}</span>
+                            </div>
+                            <p class="incident-date">Reported: ${new Date(incident.createdAt).toLocaleString()}</p>
+                            <p><strong>Location:</strong> ${incident.address} (Landmark: ${incident.landmark})</p>
+                            <p><strong>Details:</strong> ${incident.details}</p>
+                            
+                            <div class="action-buttons">
+                                ${incident.status === 'Pending' ? `
+                                    <button class="btn-resolve" onclick="updateStatus('${incident._id}', 'Resolved')">✅ Mark Resolved</button>
+                                    <button class="btn-reject" onclick="updateStatus('${incident._id}', 'Rejected')">❌ Reject</button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('incidentList').innerHTML = '<p style="color:red; text-align:center;">Error loading data. Is the server running?</p>';
+            }
+        }
+
+        // 2. Handle Status Updates
+        async function updateStatus(id, newStatus) {
+            if(!confirm(`Are you sure you want to mark this as ${newStatus}?`)) return;
+
+            try {
+                const response = await fetch(`${API_URL}/${id}/status`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+
+                if (response.ok) {
+                    alert(`Incident marked as ${newStatus}`);
+                    loadIncidents(); // Refresh the list
+                } else {
+                    alert('Failed to update status');
+                }
+            } catch (error) {
+                console.error('Error updating:', error);
+                alert('Error connecting to server');
+            }
+        }
+
+        // Initialize
+        loadIncidents();
+    </script>
+</body>
+</html>

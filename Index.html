@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IRBC - Incident Reporting</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .form-container {
+            max-width: 600px;
+            margin: 30px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .header-title {
+            color: #2c3e50;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .btn-submit {
+            background-color: #0d6efd;
+            width: 100%;
+            padding: 12px;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container-fluid justify-content-center">
+            <span class="navbar-brand mb-0 h1">IRBC Portal</span>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="form-container">
+            <h2 class="header-title">Report an Incident</h2>
+            <p class="text-center text-muted mb-4">Please fill in the details below to notify the municipal authority.</p>
+
+            <form id="incidentForm">
+                
+                <div class="mb-3">
+                    <label for="incidentTitle" class="form-label">Title of Incident <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="incidentTitle" placeholder="e.g., Broken Street Light" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="incidentDetails" class="form-label">Details of Incident <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="incidentDetails" rows="3" placeholder="Describe the issue in detail..." required></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label for="incidentAddress" class="form-label">Address of Incident <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="incidentAddress" placeholder="Street Name, Area" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="incidentLandmark" class="form-label">Nearby Landmark</label>
+                    <input type="text" class="form-control" id="incidentLandmark" placeholder="e.g., Near City Hospital">
+                </div>
+
+                <div class="mb-4">
+                    <label for="incidentImage" class="form-label">Upload Image <span class="text-danger">*</span></label>
+                    <input class="form-control" type="file" id="incidentImage" accept="image/*" required>
+                    <div class="form-text">Supported formats: JPG, PNG. Max size: 5MB.</div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-submit">Submit Report</button>
+            </form>
+        </div>
+    </div>
+<!--
+
+    <script>
+        document.getElementById('incidentForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevents page reload
+
+            // In a real app, we would send data to the server here.
+            // For now, we simulate a success message.
+            
+            const title = document.getElementById('incidentTitle').value;
+            alert(`Thank you! The incident "${title}" has been submitted successfully to the Municipal Authority.`);
+            
+            // Reset the form
+            this.reset();
+        });
+    </script>
+-->
+	
+	<script>
+  document.getElementById('incidentForm').addEventListener('submit', async function(e) {
+    e.preventDefault(); // Stop the page from reloading
+
+    const form = e.target;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const statusMessage = document.getElementById('statusMessage'); // Make sure you have a div with this ID or remove this line
+
+    // 1. Visual Feedback: Show user something is happening
+    const originalBtnText = submitBtn.innerText;
+    submitBtn.innerText = 'Submitting...';
+    submitBtn.disabled = true;
+
+    // 2. Prepare the data
+    // FormData is special: it automatically handles text AND binary files (images)
+    const formData = new FormData(form);
+
+    try {
+      // 3. Send data to the backend
+      const response = await fetch('http://localhost:5000/api/incidents', {
+        method: 'POST',
+        body: formData 
+        // Note: Do NOT set Content-Type header here. 
+        // The browser sets it automatically with the correct "boundary" for files.
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        // Success!
+        alert('✅ Report Submitted! Reference ID: ' + result.incidentId);
+        form.reset(); // Clear the form
+      } else {
+        // Server returned an error (e.g., missing fields)
+        throw new Error(result.message || 'Something went wrong.');
+      }
+
+    } catch (error) {
+      console.error('Error:', error);
+      alert('❌ Error: ' + error.message);
+    } finally {
+      // 4. Reset Button
+      submitBtn.innerText = originalBtnText;
+      submitBtn.disabled = false;
+    }
+  });
+</script>
+
+</body>
+</html>
