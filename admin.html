@@ -72,87 +72,111 @@
     </div>
 
     <script>
-        const API_URL = 'https://irbc-app.onrender.com/api/incidents';
-        const BASE_URL = 'http://localhost:5000'; // To load images
+    const API_URL = 'https://irbc-app.onrender.com/api/incidents';
+    
+    // 1. Check for Token immediately
+    const token = localStorage.getItem('adminToken');
 
-        // 1. Fetch and Display Incidents on Load
-        async function loadIncidents() {
-            try {
-                const response = await fetch(API_URL);
-                const incidents = await response.json();
-                
-                const container = document.getElementById('incidentList');
-                container.innerHTML = ''; // Clear loading text
+    // If no token, kick them to login page immediately
+    if (!token) {
+        window.location.href = 'login.html';
+    }
 
-                if (incidents.length === 0) {
-                    container.innerHTML = '<p style="text-align:center;">No incidents reported yet.</p>';
-                    return;
+    async function loadIncidents() {
+        try {
+            const response = await fetch(API_URL, {
+                headers: { 
+                    'Authorization': token  // Send the password we stored
                 }
+            });
 
-                incidents.forEach(incident => {
-                    const card = document.createElement('div');
-                    card.className = 'incident-card';
-                    
-                    // Determine Badge Color
-                    let badgeClass = 'status-pending';
-                    if(incident.status === 'Resolved') badgeClass = 'status-resolved';
-                    if(incident.status === 'Rejected') badgeClass = 'status-rejected';
+            // If server says "Forbidden" (403), your password is wrong/missing
+            if (response.status === 403) {
+                alert("🔒 Access Denied: Invalid Password. Please log in again.");
+                localStorage.removeItem('adminToken'); // Clear bad token
+                window.location.href = 'login.html';
+                return;
+            }
 
-                    card.innerHTML = `
-                        <a href="${BASE_URL}${incident.imageUrl}" target="_blank">
-                            <img src="${BASE_URL}${incident.imageUrl}" alt="Incident Image" class="incident-img">
-                        </a>
-                        <div class="incident-info">
-                            <div class="incident-header">
-                                <h2 class="incident-title">${incident.title}</h2>
-                                <span class="status-badge ${badgeClass}">${incident.status}</span>
-                            </div>
-                            <p class="incident-date">Reported: ${new Date(incident.createdAt).toLocaleString()}</p>
-                            <p><strong>Location:</strong> ${incident.address} (Landmark: ${incident.landmark})</p>
-                            <p><strong>Details:</strong> ${incident.details}</p>
-                            
-                            <div class="action-buttons">
-                                ${incident.status === 'Pending' ? `
-                                    <button class="btn-resolve" onclick="updateStatus('${incident._id}', 'Resolved')">✅ Mark Resolved</button>
-                                    <button class="btn-reject" onclick="updateStatus('${incident._id}', 'Rejected')">❌ Reject</button>
-                                ` : ''}
-                            </div>
+            if (!response.ok) {
+                throw new Error(`Server returned ${response.status}`);
+            }
+
+            const incidents = await response.json();
+            
+            const container = document.getElementById('incidentList');
+            container.innerHTML = ''; 
+
+            if (incidents.length === 0) {
+                container.innerHTML = '<p style="text-align:center;">No incidents reported yet.</p>';
+                return;
+            }
+
+            incidents.forEach(incident => {
+                // Determine Badge Color
+                let badgeClass = 'status-pending';
+                if(incident.status === 'Resolved') badgeClass = 'status-resolved';
+                if(incident.status === 'Rejected') badgeClass = 'status-rejected';
+
+                const card = document.createElement('div');
+                card.className = 'incident-card';
+                card.innerHTML = `
+                    <a href="${incident.imageUrl}" target="_blank">
+                        <img src="${incident.imageUrl}" alt="Incident" class="incident-img">
+                    </a>
+                    <div class="incident-info">
+                        <div class="incident-header">
+                            <h2 class="incident-title">${incident.title}</h2>
+                            <span class="status-badge ${badgeClass}">${incident.status}</span>
                         </div>
-                    `;
-                    container.appendChild(card);
-                });
+                        <p class="incident-date">Reported: ${new Date(incident.createdAt).toLocaleString()}</p>
+                        <p><strong>Location:</strong> ${incident.address} (Landmark: ${incident.landmark || 'N/A'})</p>
+                        <p><strong>Details:</strong> ${incident.details}</p>
+                        
+                        <div class="action-buttons">
+                            ${incident.status === 'Pending' ? `
+                                <button class="btn-resolve" onclick="updateStatus('${incident._id}', 'Resolved')">✅ Resolve</button>
+                                <button class="btn-reject" onclick="updateStatus('${incident._id}', 'Rejected')">❌ Reject</button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
 
-            } catch (error) {
-                console.error('Error:', error);
-                document.getElementById('incidentList').innerHTML = '<p style="color:red; text-align:center;">Error loading data. Is the server running?</p>';
-            }
+        } catch (error) {
+            console.error('Error:', error);
+            document.getElementById('incidentList').innerHTML = `<p style="color:red; text-align:center;">❌ Error loading data: ${error.message}</p>`;
         }
+    }
 
-        // 2. Handle Status Updates
-        async function updateStatus(id, newStatus) {
-            if(!confirm(`Are you sure you want to mark this as ${newStatus}?`)) return;
+    async function updateStatus(id, newStatus) {
+        if(!confirm(`Mark this incident as ${newStatus}?`)) return;
 
-            try {
-                const response = await fetch(`${API_URL}/${id}/status`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: newStatus })
-                });
+        try {
+            const response = await fetch(`${API_URL}/${id}/status`, {
+                method: 'PATCH',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': token 
+                },
+                body: JSON.stringify({ status: newStatus })
+            });
 
-                if (response.ok) {
-                    alert(`Incident marked as ${newStatus}`);
-                    loadIncidents(); // Refresh the list
-                } else {
-                    alert('Failed to update status');
-                }
-            } catch (error) {
-                console.error('Error updating:', error);
-                alert('Error connecting to server');
+            if (response.ok) {
+                loadIncidents(); // Refresh list
+            } else {
+                alert('Failed to update status');
             }
+        } catch (error) {
+            alert('Error connecting to server');
         }
+    }
 
-        // Initialize
+    // Load data only if we didn't redirect
+    if (token) {
         loadIncidents();
-    </script>
+    }
+</script>
 </body>
 </html>

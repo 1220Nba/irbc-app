@@ -55,13 +55,19 @@ const requireAuth = (req, res, next) => {
 
 // --- 3. DATABASE CONNECTION ---
 
-// Uses the connection string from .env (or falls back to local for testing)
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://<db_username>:<db_password>@cluster0-irbc-app.jjhposi.mongodb.net/?appName=Cluster0-irbc-app';
+// This line tells Node: "Look for MONGODB_URI in the .env file."
+// If it finds it, use it. If not, fail (or use a local fallback).
+const MONGODB_URI = process.env.MONGODB_URI;
+
+// Check if the URI is actually loaded to avoid vague errors
+if (!MONGODB_URI) {
+    console.error('❌ Fatal Error: MONGODB_URI is missing from .env file');
+    process.exit(1); // Stop the server if no database link exists
+}
 
 mongoose.connect(MONGODB_URI)
     .then(() => console.log('✅ MongoDB Connected Successfully'))
     .catch(err => console.error('❌ MongoDB Connection Error:', err));
-
 
 // --- 4. API ROUTES ---
 
